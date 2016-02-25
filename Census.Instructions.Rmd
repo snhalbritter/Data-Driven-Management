@@ -5,7 +5,7 @@ date: "February 23, 2016"
 output: html_document
 ---
 
-Importing Data with American Community Survey Data
+#Importing Data with American Community Survey Data
 
 ```{r}
 #install.packages("acs")
@@ -13,27 +13,35 @@ library(acs)
 
 #Request an API Key
 #Visit http://www.census.gov/developers/tos/key_request.html
-api.key.install('ee92d94c66c92c78e9c211883713e2fc2b9508b1')
+#api.key.install('yourkeyhere')
 #Note that the Census API currently only provides ACS data from 2010 onwards.
-#the above key is mine, get your own.
 
-#install for mapping if you'd like
-install.packages("choroplethr")
+#install or load packages for mapping if you'd like
+#install.packages("choroplethr")
 library(choroplethr)
-install.packages("choroplethrMaps")
+#install.packages("choroplethrMaps")
 library(choroplethrMaps)
 
 
 ```
 
 1. acs.lookup
+
 Usage: Search for relevant variables and tables from the US Census American Community Survey.
 Arguments: acs.lookup(endyear = 2011, span = 5, dataset = "acs", keyword, table.name, table.number, case.sensitive = T)
+
 ```{r}
-#if you want information on all races (or age groups or languages, etc.), use table.name="Race" (or "Age" or
-#"Language", etc.); if you only want a specific race (or age group or language, etc.), use keyword="Asian" (and so on).
+#if you want information on all races (or age groups or languages, etc.), use table.name="Race" (or "Age" or "Language", etc.);
+#if you only want a specific race (or age group or language, etc.), use keyword="Asian" (and so on).
 
 acs.lookup(keyword = "Arabic", endyear = 2014)
+#note that the default year is 2011
+```
+
+The resulting table shows that table B16001 contains data organized into three different variables:
+(1) Arabic Speakers and then subsets of that to include (2) that speak English 'very well' or (3) that less than 'very well'
+
+```{r}
 arabic <- get_acs_data("B16001", "county", column_idx=108)
 #this will take a minute because it is a lot of data
 str(arabic)
