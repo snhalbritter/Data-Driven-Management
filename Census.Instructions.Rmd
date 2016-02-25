@@ -1,0 +1,103 @@
+---
+title: "Census Instructions"
+author: "Skyler Halbritter"
+date: "February 23, 2016"
+output: html_document
+---
+
+Importing Data with American Community Survey Data
+
+```{r}
+#install.packages("acs")
+library(acs)
+
+#Request an API Key
+#Visit http://www.census.gov/developers/tos/key_request.html
+api.key.install('ee92d94c66c92c78e9c211883713e2fc2b9508b1')
+#Note that the Census API currently only provides ACS data from 2010 onwards.
+#the above key is mine, get your own.
+
+#install for mapping if you'd like
+install.packages("choroplethr")
+library(choroplethr)
+install.packages("choroplethrMaps")
+library(choroplethrMaps)
+
+
+```
+
+1. acs.lookup
+Usage: Search for relevant variables and tables from the US Census American Community Survey.
+Arguments: acs.lookup(endyear = 2011, span = 5, dataset = "acs", keyword, table.name, table.number, case.sensitive = T)
+```{r}
+#if you want information on all races (or age groups or languages, etc.), use table.name="Race" (or "Age" or
+#"Language", etc.); if you only want a specific race (or age group or language, etc.), use keyword="Asian" (and so on).
+
+acs.lookup(keyword = "Arabic", endyear = 2014)
+arabic <- get_acs_data("B16001", "county", column_idx=108)
+#this will take a minute because it is a lot of data
+str(arabic)
+#list of 2 elements, a data frame with region and value pairs and the second element is the title of the column
+df1 <- arabic[[1]]
+head(df1)
+#the regions are FIPS county codes
+boxplot(df1$value, main="2014 County Population Estimates: Number of Arabic Speaking Households")
+
+#conclusions from chart:
+#1) the median is very low and 2) there are 4 very large outliers.
+
+data(county.regions)
+head(county.regions)
+
+df2 <- merge(df1, county.regions)
+#reorder from greatest to least
+df2 <- df2[order(-df2$value),]
+head(df2)
+
+#map it
+county_choropleth(df1, title = "2014 County Estimates: \nNumber of Arabic Speaking Households")
+```
+
+2. asc.fetch
+Usage: Downloads ACS data via the Census API and converts to a proper acs object with estimates, standard errors, and associated metadata.
+Arguments: acs.fetch(endyear = 2011, span = 5, geography, table.name, table.number, variable, keyword, key, col.names = "auto", ...)
+```{r}
+arabic <- acs.lookup(keyword="Arabic")
+acs.fetch(arabic, endyear=2011, span=5)
+```
+
+3. geo.lookup and geo.make
+Usage: The geo.make() function is used to create new (user-specified) geographies.
+Arguments: geo.make(us, region, division, state, county, county.subdivision,
+  place, tract, block.group, msa, csa, necta, urban.area,
+  congressional.district, state.legislative.district.upper,
+  state.legislative.district.lower, puma, zip.code,
+  american.indian.area, school.district.elementary,
+  school.district.secondary, school.district.unified,
+  combine = F, combine.term = "aggregate", check = FALSE, key = "auto")
+```{r}
+acs.lookup(table.name = "Place of Birth", endyear = 2011)
+#lets choose "Place of Birth for the Foreign-Born Population in the United States" which is table "B05006"
+#lets focus on Onondaga county
+which(fips.county$County.Name == "Onondaga County")
+fips.county[1862,]
+#or we can use geo.lookup
+geo.lookup(state="NY", county="Onondaga")
+#now we know the state ANSI (36) and County ANSI(67)
+onon.ny <- geo.make(state=36, county=67, tract = "*")
+#the * allows your search to include ALL tracts
+syria <- get_acs_data("B05006", "county", column_idx=085)
+
+foreignborn.ny=acs.fetch(geo=onon.ny, table.number="B05006", keyword = "Syria")
+#col.names = "pretty"
+head(foreignborn.ny)
+
+#now we have the data on Place of Birth for the Foreign-Born Population in every tract of Onondaga County, NY"
+
+acs.lookup(table.number = "B05006", keyword = "Syria")
+```
+
+References:
+1. http://www.r-bloggers.com/how-to-search-for-census-data-from-r/
+2. https://cran.r-project.org/web/packages/acs/acs.pdf
+3. http://eglenn.scripts.mit.edu/citystate/wp-content/uploads/2013/02/wpid-working_with_acs_R2.pdf
