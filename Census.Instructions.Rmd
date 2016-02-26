@@ -1,11 +1,11 @@
 ---
-title: "Census Instructions"
+title: "ACS Instructions"
 author: "Skyler Halbritter"
 date: "February 23, 2016"
 output: html_document
 ---
 
-#Importing Data with American Community Survey Data
+##Importing Data with American Community Survey Data
 
 ```{r}
 #install.packages("acs")
@@ -13,7 +13,7 @@ library(acs)
 
 #Request an API Key
 #Visit http://www.census.gov/developers/tos/key_request.html
-#api.key.install('yourkeyhere')
+api.key.install('ee92d94c66c92c78e9c211883713e2fc2b9508b1')
 #Note that the Census API currently only provides ACS data from 2010 onwards.
 
 #install or load packages for mapping if you'd like
@@ -21,88 +21,121 @@ library(acs)
 library(choroplethr)
 #install.packages("choroplethrMaps")
 library(choroplethrMaps)
-
-
 ```
 
-1. acs.lookup
+###acs.lookup
 
 Usage: Search for relevant variables and tables from the US Census American Community Survey.
+
 Arguments: acs.lookup(endyear = 2011, span = 5, dataset = "acs", keyword, table.name, table.number, case.sensitive = T)
 
-```{r}
-#if you want information on all races (or age groups or languages, etc.), use table.name="Race" (or "Age" or "Language", etc.);
-#if you only want a specific race (or age group or language, etc.), use keyword="Asian" (and so on).
+Notes:
+1. If you want information on all races (or age groups or languages, etc.), use table.name="Race" (or "Age" or "Language", etc.);
+2. If you only want a specific race (or age group or language, etc.), use keyword="Asian" (and so on).
+3. Searchs are case sensitive, but that argument can be set to F
+4. The default year is 2011
 
+```{r}
 acs.lookup(keyword = "Arabic", endyear = 2014)
-#note that the default year is 2011
 ```
 
 The resulting table shows that table B16001 contains data organized into three different variables:
-(1) Arabic Speakers and then subsets of that to include (2) that speak English 'very well' or (3) that less than 'very well'
+(1) Arabic Speakers and then subsets of that to include (2) that speak English 'very well' or (3) that speak it less than 'very well'
 
+***
+
+###Mapping using acs.lookup information
+Start with the get_acs_data() function from the 'choroplethr' package.
 ```{r}
-arabic <- get_acs_data("B16001", "county", column_idx=108)
-#this will take a minute because it is a lot of data
+arabic <- get_acs_data(tableId= "B16001", map="county", column_idx=108)
+```
+
+This will take a minute because it is a lot of data.
+```{r}
 str(arabic)
-#list of 2 elements, a data frame with region and value pairs and the second element is the title of the column
+```
+'arabic' is now a list of 2 elements, a data frame with region and value pairs and the second element is the title of the column
+
+Next, subset this list to choose the dataframe.
+```{r}
 df1 <- arabic[[1]]
 head(df1)
-#the regions are FIPS county codes
+```
+The regions are FIPS county codes
+```{r}
 boxplot(df1$value, main="2014 County Population Estimates: Number of Arabic Speaking Households")
+```
 
-#conclusions from chart:
-#1) the median is very low and 2) there are 4 very large outliers.
+Conclusions from above chart:
+1. The median is low.
+2. There are 4 very large outliers.
 
+We will now pull county data from the choroplethrMaps package.
+ACS also has a package of county data, but the 'region' header matches better in this dataset
+
+```{r}
 data(county.regions)
 head(county.regions)
+```
 
+Merge the county information with the ACS data and reorder from greatest to least.
+
+```{r}
 df2 <- merge(df1, county.regions)
-#reorder from greatest to least
 df2 <- df2[order(-df2$value),]
 head(df2)
+```
 
-#map it
+Now let's map it.
+```{r}
 county_choropleth(df1, title = "2014 County Estimates: \nNumber of Arabic Speaking Households")
 ```
 
-2. asc.fetch
-Usage: Downloads ACS data via the Census API and converts to a proper acs object with estimates, standard errors, and associated metadata.
-Arguments: acs.fetch(endyear = 2011, span = 5, geography, table.name, table.number, variable, keyword, key, col.names = "auto", ...)
+***
+
+###geo.lookup, geo.make, and acs.fetch
+1. geo.lookup: similar to acs.lookup, will search on  arguments and output all the matches
+2. geo.make: is used to create new (user-specified) geographies.
+3. acs.fetch: downloads ACS data via the Census API and converts to a proper acs object with estimates, standard errors, and associated metadata.
+
+Let's choose "Place of Birth for the Foreign-Born Population in the United States" which is table "B05006"
 ```{r}
-arabic <- acs.lookup(keyword="Arabic")
-acs.fetch(arabic, endyear=2011, span=5)
+birth <- acs.lookup(table.name = "Place of Birth", endyear = 2011)
+birth[1:20,]
 ```
 
-3. geo.lookup and geo.make
-Usage: The geo.make() function is used to create new (user-specified) geographies.
-Arguments: geo.make(us, region, division, state, county, county.subdivision,
-  place, tract, block.group, msa, csa, necta, urban.area,
-  congressional.district, state.legislative.district.upper,
-  state.legislative.district.lower, puma, zip.code,
-  american.indian.area, school.district.elementary,
-  school.district.secondary, school.district.unified,
-  combine = F, combine.term = "aggregate", check = FALSE, key = "auto")
+Let's focus on Onondaga county by using the ACS function geo.lookup()
+
 ```{r}
-acs.lookup(table.name = "Place of Birth", endyear = 2011)
-#lets choose "Place of Birth for the Foreign-Born Population in the United States" which is table "B05006"
-#lets focus on Onondaga county
-which(fips.county$County.Name == "Onondaga County")
-fips.county[1862,]
-#or we can use geo.lookup
 geo.lookup(state="NY", county="Onondaga")
-#now we know the state ANSI (36) and County ANSI(67)
+```
+
+Now we know the state ANSI (36) and County ANSI(67) and can create a geographic object.
+Note: Use * in tracts to include all tracts.
+```{r}
 onon.ny <- geo.make(state=36, county=67, tract = "*")
-#the * allows your search to include ALL tracts
-syria <- get_acs_data("B05006", "county", column_idx=085)
+```
 
-foreignborn.ny=acs.fetch(geo=onon.ny, table.number="B05006", keyword = "Syria")
-#col.names = "pretty"
-head(foreignborn.ny)
+Creating geographic objects allows them to be used later in commands like acs.fetch()
 
-#now we have the data on Place of Birth for the Foreign-Born Population in every tract of Onondaga County, NY"
+```{r}
+foreign.onon.ny <- acs.fetch(geo=onon.ny, table.number="B05006")
+foreign.onon.ny[1:3, 1:10]
+```
 
-acs.lookup(table.number = "B05006", keyword = "Syria")
+Every possible foreign born location is included in this data.
+If we want to see the headers instead of variable numbers we can use col.names="pretty"
+
+```{r}
+foreign.onon.ny <- acs.fetch(geo=onon.ny, table.number="B05006", col.names="pretty")
+foreign.onon.ny[1:3, 1:2]
+```
+
+We can also limit our fetch down to one keyword or variable, such as Syria
+```{r}
+foreign.syria <- acs.fetch(geo=onon.ny, table.number="B05006", keyword = "Syria")
+foreign.syria
+
 ```
 
 References:
