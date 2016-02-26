@@ -14,6 +14,7 @@ library(acs)
 #Request an API Key
 #Visit http://www.census.gov/developers/tos/key_request.html
 api.key.install('ee92d94c66c92c78e9c211883713e2fc2b9508b1')
+#This is my key. You should substitute it for yours when running these commands.
 #Note that the Census API currently only provides ACS data from 2010 onwards.
 
 #install or load packages for mapping if you'd like
