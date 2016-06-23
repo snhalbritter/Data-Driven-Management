@@ -1,0 +1,137 @@
+---
+title: "Lab05_PlotFunction"
+author: "Skyler Halbritter"
+date: "October 10, 2015"
+output: html_document
+---
+
+```{r}
+library("Lahman")
+data(Teams)
+```
+
+###Question 1.	Examine the relationship between Hits and Wins using a scatterplot. Use meaningful labels and a visually appealing style.
+
+```{r}
+hits <- Teams$H
+wins <- Teams$W
+plot(
+  x=hits, y=wins,
+  xlab="Hits per Season",
+  ylab="Wins per Season",
+  main="Relationship Between MLB Teams' Seasonal Hits and Wins",
+  pch=1,
+  col="cadetblue3",
+  cex=.75,
+  bty="n"
+  )
+```
+
+
+###Question 2.	Annotate two outliers on the graph with the team name.
+*The Identify function was used to identify two outlier points(observations 369 and 875).*
+```{r}
+hits <- Teams$H
+wins <- Teams$W
+plot(
+  x=hits, y=wins,
+  xlab="Hits per Season",
+  ylab="Wins per Season",
+  main="Relationship Between MLB Teams' Seasonal Hits and Wins",
+  pch=1,
+  col="cadetblue3",
+  cex=.75,
+  bty="n"
+  )
+outlier1 <- Teams[369,]
+outlier1.x <- outlier1$H
+outlier1.y <- outlier1$W
+points( x=outlier1.x, y=outlier1.y, pch=1, cex=2, col="firebrick4" )
+text( x=outlier1.x, y=outlier1.y, labels=outlier1$name, pos=1, col="firebrick4" )
+
+outlier2 <- Teams[875,]
+outlier2.x <- outlier2$H
+outlier2.y <- outlier2$W
+points( x=outlier2.x, y=outlier2.y, pch=1, cex=2, col="firebrick4" )
+text( x=outlier2.x, y=outlier2.y, labels=outlier2$name, pos=2, col="firebrick4" )
+
+```
+
+
+###Question 3.	Examine the relationship between ERA and Wins using a scatterplot. Use meaningful labels and a visually appealing style.
+```{r}
+era <- Teams$ERA
+wins <- Teams$W
+plot.era.win <- plot(
+  x=era, y=wins,
+  xlab="Earned Run Average per Season",
+  ylab="Wins per Season",
+  main="Relationship Between MLB Teams' Seasonal ERA and Wins",
+  pch=1,
+  col="lightgoldenrod3",
+  cex=1,
+  bty="n"
+  )
+```
+
+###Question 4.	Annotate two outliers on the graph with the team name.
+*The Identify function was used to identify two outlier points (observations 22 and 468).*
+```{r}
+era <- Teams$ERA
+wins <- Teams$W
+plot.era.win <- plot(
+  x=era, y=wins,
+  xlab="Earned Run Average per Season",
+  ylab="Wins per Season",
+  main="Relationship Between MLB Teams' Seasonal ERA and Wins",
+  pch=1,
+  col="lightgoldenrod3",
+  cex=1,
+  bty="n"
+  )
+outlier3 <- Teams[22,]
+outlier3.x <- outlier3$ERA
+outlier3.y <- outlier3$W
+points( x=outlier3.x, y=outlier3.y, pch=1, cex=2, col="mediumorchid4" )
+text( x=outlier3.x, y=outlier3.y, labels=outlier3$name, pos=2, col="mediumorchid4" )
+
+outlier4 <- Teams[468,]
+outlier4.x <- outlier4$ERA
+outlier4.y <- outlier4$W
+points( x=outlier4.x, y=outlier4.y, pch=1, cex=2, col="mediumorchid4" )
+text( x=outlier4.x, y=outlier4.y, labels=outlier4$name, pos=4, col="mediumorchid4" )
+```
+
+###Question 5.	BONUS - add a trend line to the scatterplot to highlight the relationship.
+```{r}
+era <- Teams$ERA
+wins <- Teams$W
+plot.era.win <- plot(
+  x=era, y=wins,
+  xlab="Earned Run Average per Season",
+  ylab="Wins per Season",
+  main="Relationship Between MLB Teams' Seasonal ERA and Wins",
+  pch=1,
+  col="lightgoldenrod3",
+  cex=1,
+  bty="n"
+  )
+lines( lowess( era, wins ), col="indianred4", lwd=4 )
+```
+
+```{r}
+hits <- Teams$H
+wins <- Teams$W
+plot(
+  x=hits, y=wins,
+  xlab="Hits per Season",
+  ylab="Wins per Season",
+  main="Relationship Between MLB Teams' Seasonal Hits and Wins",
+  pch=1,
+  col="cadetblue3",
+  cex=.75,
+  bty="n"
+  )
+lines( lowess( hits, wins ), col="darkgoldenrod2", lwd=4 )
+```
+

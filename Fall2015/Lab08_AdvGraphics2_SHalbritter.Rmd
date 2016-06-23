@@ -1,0 +1,111 @@
+---
+title: "Lab08_AdvancedGraphics2_SHalbritter"
+author: "Skyler Halbritter"
+date: "November 3, 2015"
+---
+####Part I:
+```{r, fig.width=20, fig.height=18}
+
+library(Lahman)
+data("Teams")
+teams.1900 <- Teams[Teams$yearID > 1899, ]
+ave.so <- teams.1900$SO/teams.1900$G
+lg.ave.so <- tapply( X=ave.so, INDEX=teams.1900$yearID, mean, na.rm=T)
+dat.lg.ave <- data.frame( ave.so=as.numeric(lg.ave.so), name=names(lg.ave.so), stringsAsFactors=F )
+dat.lg.ave$name <- as.numeric( dat.lg.ave$name )
+
+par(mar=c(0,0,0,0))
+    
+plot( teams.1900$yearID, ave.so,
+      type="n", bty="n",
+      ylab="", yaxt="n",
+      xlab="", xaxt="n",
+      xlim=c(1880, 2050),
+      ylim=c(-2,12)
+      )
+
+segments( x0=1900, x1=2015, y0=seq(from=1, to=10, by=1), col="lightgray", lty=3)
+text(x=2017, y=c(0:10), c(0:10), col= "gray")
+axis(1, at=seq(from=1900, to=2015, by=10), pos=0, col="darkgray")
+text(x=1898, y=10.5, "Strikeouts per game per team", pos=4, font=2)
+segments(x0=1900, x1=1903, y0=9.7, col="deepskyblue4")
+points(1900, 9.7, col="deepskyblue4", pch=19, cex=.5)
+points(1903, 9.7, col="deepskyblue4", pch=19, cex=.5)
+text(1904, 9.7, "League Average", cex=.8, pos=4, col="deepskyblue4")
+text(1950, 10.5, "(by batter)", col=gray(.5), cex=.8)
+
+text( x=1917, y=.5, "U.S. enters\n World War I.", col="darkgray", cex=0.7)
+segments(x0=1917, y0=1.0, y1=3.5, col="gray")
+text( x=1969, y=8.5, "Pitching had become so dominant\n in the 1960's that the mound\n was lowered in 1969.", col="darkgray", cex=0.7)
+segments(x0=1969, y0=5.8, y1=8, col="gray")
+text( x=1973, y=1.5, "Designated hitter\n rule took effect.", col="darkgray", cex=0.7)
+segments(x0=1973, y0=2, y1=5.2, col="gray")
+
+points(teams.1900$yearID, ave.so,pch=19, cex=1, col=gray(.5, alpha=.3), bg=NA)
+points(dat.lg.ave$name, dat.lg.ave$ave.so, col="deepskyblue4", pch=19, cex=1, type="o")
+
+points(1924, 2.7, pch=1, cex=1.5)
+text(1924, 2.7, "2.7", col="deepskyblue4", pos=1, font=2, cex=1.5)
+text(1924, 1.5, "League Average\n 1924", cex=.7, font=2)
+points(2012, 7.5, pch=1, cex=1.5)
+text(2012, 7.5, "7.5", col="deepskyblue4", pos=3, font=2, cex=1.5)
+text(2012, 8.5, "League Average\n 2012", cex=.7, font=2)
+```
+
+
+####Part II:
+
+
+```{r, fig.width=20, fig.height=18}
+teams.1900 <- Teams[Teams$yearID > 1899, ]
+ave.so <- teams.1900$SO/teams.1900$G
+lg.ave.so <- tapply( X=ave.so, INDEX=teams.1900$yearID, mean, na.rm=T)
+dat.lg.ave <- data.frame( ave.so=as.numeric(lg.ave.so), name=names(lg.ave.so), stringsAsFactors=F )
+dat.lg.ave$name <- as.numeric( dat.lg.ave$name )
+
+par(mar=c(0,0,0,0))
+plot( teams.1900$yearID, ave.so,
+      type="n", bty="n",
+      ylab="", yaxt="n",
+      xlab="", xaxt="n",
+      xlim=c(1880, 2050),
+      ylim=c(-2,12)
+      )
+
+segments( x0=1900, x1=2015, y0=seq(from=1, to=10, by=1), col="lightgray", lty=3)
+text(x=2017, y=c(0:10), c(0:10), col= "gray")
+axis(1, at=seq(from=1900, to=2015, by=10), pos=0, col="darkgray")
+text(x=1898, y=10.5, "Strikeouts per game per team", pos=4, font=2)
+segments(x0=1900, x1=1903, y0=9.7, col="deepskyblue4")
+points(1900, 9.7, col="deepskyblue4", pch=19, cex=.5)
+points(1903, 9.7, col="deepskyblue4", pch=19, cex=.5)
+text(1904, 9.7, "League Average", cex=.8, pos=4, col="deepskyblue4")
+text(1950, 10.5, "(by batter)", col=gray(.5), cex=.8)
+
+text( x=1917, y=.5, "U.S. enters\n World War I.", col="darkgray", cex=0.7)
+segments(x0=1917, y0=1.0, y1=3.5, col="gray")
+text( x=1969, y=8.5, "Pitching had become so dominant\n in the 1960's that the mound\n was lowered in 1969.", col="darkgray", cex=0.7)
+segments(x0=1969, y0=5.8, y1=8, col="gray")
+text( x=1973, y=1.5, "Designated hitter\n rule took effect.", col="darkgray", cex=0.7)
+segments(x0=1973, y0=2, y1=5.2, col="gray")
+
+points(teams.1900$yearID, ave.so,pch=19, cex=1, col=gray(.5, alpha=.3))
+points(dat.lg.ave$name, dat.lg.ave$ave.so, col="deepskyblue4", pch=19, cex=1, type="o")
+
+teams.1900 <- Teams[Teams$yearID > 1899, ]
+clev <- teams.1900[teams.1900$teamID == "CLE", ]
+ave.so.clev <- clev$SO/clev$G
+points(clev$yearID, ave.so.clev,pch=19, cex=1, col="darkorange", type="o")
+segments(x0=1900, x1=1903, y0=9.3, col="darkorange")
+points(1900, 9.3, col="darkorange", pch=19, cex=.5)
+points(1903, 9.3, col="darkorange", pch=19, cex=.5)
+text(1904, 9.3, "Cleveland Indians' Average", cex=.8, pos=4, col="darkorange")
+
+points(1924, 2.7, pch=1, cex=1.5)
+text(1924, 2.7, "2.7", col="deepskyblue4", pos=1, font=2, cex=1.5)
+text(1924, 1.5, "League Average\n 1924", cex=.7, font=2)
+points(2012, 7.5, pch=1, cex=1.5)
+text(2012, 7.5, "7.5", col="deepskyblue4", pos=3, font=2, cex=1.5)
+text(2012, 8.5, "League Average\n 2012", cex=.7, font=2)
+```
+

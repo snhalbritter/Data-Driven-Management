@@ -1,0 +1,126 @@
+---
+title: "Lab07_Advanced Graphics"
+author: "Skyler Halbritter"
+date: "October 26, 2015"
+output: html_document
+---
+```{r}
+library(Lahman)
+data("Salaries")
+```
+
+####1.	Calculate each team's budget from 2002 using the tapply() function.
+```{r}
+sal.2002 <- Salaries [Salaries$yearID=="2002", ]
+sal.2002.names <- merge( sal.2002, Teams, by.x=c("teamID", "yearID", "lgID"), by.y=c("teamID", "yearID", "lgID"))
+sal.2002 <- tapply( X=sal.2002.names$salary, INDEX=sal.2002.names$name, sum, na.rm=T )
+sal.2002.dat <- data.frame( budget=as.numeric(sal.2002), name=names(sal.2002))
+sal.2002 <- merge(sal.2002.dat, Teams, by.x="name", by.y="name" )
+sals.2002 <- sal.2002[sal.2002$yearID =="2002",]
+sals.2002 <- sals.2002[ order( sals.2002$budget, decreasing=T ), ]
+sals.2002[c("name", "budget")]
+```
+
+***
+
+####2.	Subset the results by American and National League. Create separate graphs for each league. Include the league average budget in the appropriate spot on the graph.
+####3.	Use each team's total budget instead of the % of league budget.
+####4. Label everything appropriately. 
+
+**National League Subset**
+```{r}
+nl.2002 <- sals.2002[sals.2002$lgID == "NL",]
+nl.ave <- mean(nl.2002$budget)
+nl.ave.dat <- data.frame(budget=nl.ave, name="National League Average")
+nl.sal.2002 <- merge(nl.2002, nl.ave.dat, all.x = T, all.y=T)
+nl.2002 <- nl.sal.2002[ order( nl.sal.2002$budget, decreasing=T ), ]
+```
+**National League Plot**
+```{r}
+plot( nl.2002$budget, 17:1, type="n",
+      xlim=c(-50000000,150000000), ylim=c(-2,20), 
+      bty="n", ylab="", yaxt="n", xlab="", xaxt="n"
+)
+rect (xleft=0, ybottom=9.5, xright=125000000, ytop=10.5, col="gray94", border="gray94")
+segments( x0=0, y0=0, y1=17, col="gray", lty=3 )
+segments( x0=25000000, y0=0, y1=17, col="gray", lty=3 )
+segments( x0=50000000, y0=0, y1=17, col="gray", lty=3 )
+segments( x0=75000000, y0=0, y1=17, col="gray", lty=3 )
+segments( x0=100000000, y0=0, y1=17, col="gray", lty=3 )
+segments( x0=125000000, y0=0, y1=17, col="gray", lty=3 )
+title(main="2002 Budgets of National League Teams"  )
+segments( x0=0, x1=nl.2002$budget, y0=17:1, col="lightgray", lty=1 )
+text( nl.2002$budget, 17:1, (paste("$", (format(nl.2002$budget , big.mark=",")), sep="")), pos=4, cex=0.6, col="lightskyblue3" )
+text( c(25000000, 50000000, 75000000, 100000000, 125000000), -1, c("$25M","$50M","$75M","$100M","$125M"), col="gray43", cex=0.6 )
+text( -1, 17:1, nl.2002$name, col = "gray43", pos=2, cex=0.6)
+points(nl.2002$budget, 17:1, pch=19, cex=.8, col="lightskyblue3")
+```
+
+***
+**American League Subset**
+```{r}
+al.2002 <- sals.2002[sals.2002$lgID == "AL",]
+al.ave <- mean(al.2002$budget)
+al.ave.dat <- data.frame(budget=al.ave, name="American League Average")
+al.sal.2002 <- merge(al.2002, al.ave.dat, all.x = T, all.y=T)
+al.2002 <- al.sal.2002[ order( al.sal.2002$budget, decreasing=T ), ]
+```
+**American League Plot**
+```{r}
+plot( al.2002$budget, 15:1, type="n",
+      xlim=c(-50000000,150000000), ylim=c(-2,18), 
+      bty="n", ylab="", yaxt="n", xlab="", xaxt="n"
+)
+rect (xleft=0, ybottom=8.5, xright=125000000, ytop=9.5, col="gray94", border="gray94")
+segments( x0=0, y0=0, y1=15, col="gray", lty=3 )
+segments( x0=25000000, y0=0, y1=15, col="gray", lty=3 )
+segments( x0=50000000, y0=0, y1=15, col="gray", lty=3 )
+segments( x0=75000000, y0=0, y1=15, col="gray", lty=3 )
+segments( x0=100000000, y0=0, y1=15, col="gray", lty=3 )
+segments( x0=125000000, y0=0, y1=15, col="gray", lty=3 )
+title(main="2002 Budgets of American League Teams"  )
+segments( x0=0, x1=al.2002$budget, y0=15:1, col="lightgray", lty=1 )
+text( al.2002$budget, 15:1, (paste("$", (format(al.2002$budget , big.mark=",")), sep="")), pos=4, cex=0.6, col="indianred" )
+text( c(25000000, 50000000, 75000000, 100000000, 125000000), -1, c("$25M","$50M","$75M","$100M","$125M"), col="gray43", cex=0.6 )
+text( -1, 15:1, al.2002$name, col = "gray43", pos=2, cex=0.6)
+points(al.2002$budget, 15:1, pch=19, cex=.8, col="indianred")
+```
+
+***
+**National and American League Comparison**
+```{r, echo=FALSE}
+par( mfrow=c(2,1), mar=c(0,0,0,0 ))
+plot( nl.2002$budget, 17:1, type="n",
+      xlim=c(-50000000,150000000), ylim=c(-2,20), 
+      bty="n", ylab="", yaxt="n", xlab="", xaxt="n"
+)
+rect (xleft=0, ybottom=9.5, xright=125000000, ytop=10.5, col="gray94", border="gray94")
+segments( x0=0, y0=0, y1=17, col="gray", lty=3 )
+segments( x0=25000000, y0=0, y1=17, col="gray", lty=3 )
+segments( x0=50000000, y0=0, y1=17, col="gray", lty=3 )
+segments( x0=75000000, y0=0, y1=17, col="gray", lty=3 )
+segments( x0=100000000, y0=0, y1=17, col="gray", lty=3 )
+segments( x0=125000000, y0=0, y1=17, col="gray", lty=3 )
+title(main="2002 Budgets of National League Teams", line=-1  )
+segments( x0=0, x1=nl.2002$budget, y0=17:1, col="lightgray", lty=1 )
+text( nl.2002$budget, 17:1, (paste("$", (format(nl.2002$budget , big.mark=",")), sep="")), pos=4, cex=0.6, col="lightskyblue3" )
+text( c(25000000, 50000000, 75000000, 100000000, 125000000), -1, c("$25M","$50M","$75M","$100M","$125M"), col="gray43", cex=0.6 )
+text( -1, 17:1, nl.2002$name, col = "gray43", pos=2, cex=0.6)
+points(nl.2002$budget, 17:1, pch=19, cex=.8, col="lightskyblue3")
+plot( al.2002$budget, 15:1, type="n",
+      xlim=c(-50000000,150000000), ylim=c(-5,15), 
+      bty="n", ylab="", yaxt="n", xlab="", xaxt="n"
+)
+title(main="2002 Budgets of American League Teams", line=-10)
+rect (xleft=0, ybottom=8.5, xright=125000000, ytop=9.5, col="gray94", border="gray94")
+segments( x0=0, y0=0, y1=15, col="gray", lty=3 )
+segments( x0=25000000, y0=0, y1=15, col="gray", lty=3 )
+segments( x0=50000000, y0=0, y1=15, col="gray", lty=3 )
+segments( x0=75000000, y0=0, y1=15, col="gray", lty=3 )
+segments( x0=100000000, y0=0, y1=15, col="gray", lty=3 )
+segments( x0=125000000, y0=0, y1=15, col="gray", lty=3 )
+segments( x0=0, x1=al.2002$budget, y0=15:1, col="lightgray", lty=1 )
+text( al.2002$budget, 15:1, (paste("$", (format(al.2002$budget , big.mark=",")), sep="")), pos=4, cex=0.6, col="indianred" )
+text( -1, 15:1, al.2002$name, col = "gray43", pos=2, cex=0.6)
+points(al.2002$budget, 15:1, pch=19, cex=.8, col="indianred")
+```
