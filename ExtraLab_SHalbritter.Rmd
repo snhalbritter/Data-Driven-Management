@@ -1,0 +1,47 @@
+---
+title: "ExtraLab_SHalbritter"
+author: "Skyler Halbritter"
+date: "December 10, 2015"
+output: html_document
+---
+
+```{r, echo=FALSE}
+setwd("C:/Users/snhalbritter/Documents/1. Syracuse/6. Fall 2015 Semester/4. Data Driven Decision Making/Week12")
+
+```
+
+```{r, fig.width=15, fig.height=10}
+
+state.dat <- read.csv("IncomeLifeExpectancy.csv")
+voteRec <- as.factor(state.dat$Obam2008)
+model <- lm(state.dat$LifeExp ~ state.dat$Income)
+
+#plot
+plot(state.dat$Income, state.dat$LifeExp, 
+     type="n", bty="n", xaxt="n", yaxt="n", xlim=c(2990,6000), ylim=c(67.7,74),
+     ylab="Life Expectancy (Years)", xlab="Per Capita Income ($)",
+     main="Relationship Between Income and Life Expectancy in the U.S.")
+
+#abline and segments
+abline(model, col="gray30", lty=3)
+segments(x0=state.dat$Income, y0=model$fitted.values, y1=state.dat$LifeExp, col="lightgray")
+
+#points
+points(state.dat$Income, state.dat$LifeExp, pch=19, col=c("firebrick3", "dodgerblue3")[voteRec])
+
+#statenames
+text(x=state.dat$Income, y=state.dat$LifeExp, labels=state.dat$Abbrev, 
+     pos=4, offset=.3, cex=.75, col=c("indianred", "dodgerblue1")[voteRec])
+
+#add axis labels
+text(seq(from=3000, to=6000, by=500), 67.8, paste("$", seq(from=3000, to=6000, by=500), sep=""), col="gray30")
+text(2900, seq(from=68, to=74, by=1), seq(from=68, to=74, by=1), col="gray30")
+
+#legend
+text(5800, 69.5, "Presidential Voting Record 2008", col="gray25")
+points(5600, 69, pch=19, cex=1.5, col="firebrick3")
+text(5700, 69, "McCain", col="indianred")
+points(5600, 69.25, pch=19, cex=1.5, col="dodgerblue3")
+text(5700, 69.25, "Obama", col="dodgerblue1")
+
+```
