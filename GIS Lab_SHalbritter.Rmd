@@ -1,0 +1,166 @@
+---
+title: "GIS Lab"
+author: "Skyler Halbritter"
+date: "March 2, 2016"
+output: html_document
+---
+
+
+Getting Started
+```{r}
+library( maptools )
+library( sp )
+library( dplyr )
+library( RColorBrewer )
+
+syr <- readShapePoly( fn="01-05-2015", proj4string=CRS("+proj=longlat +datum=WGS84") )
+dat <- as.data.frame( syr )
+```
+
+1.	What is the average price of a single family home in each neighborhood?
+```{r}
+sing.fam <- dat[dat$LandUse == "Single Family", ]
+tapply(sing.fam$AssessedVa, sing.fam$Nhood, mean, na.rm=T)
+```
+
+2.	What is the average value of one acre of land in each neighborhood?
+```{r}
+dat$acreprice <- dat$AssessedVa/dat$Acres
+tapply(dat$acreprice, dat$Nhood, mean, na.rm=T)
+
+#or with dplyr package
+dat2 <- mutate( dat, price.acre = AssessedVa / Acres  )
+by.hood <- group_by( dat2, Nhood )
+prices <- summarise( by.hood, count = n(),
+                     ave.price = mean(price.acre, na.rm= TRUE) )
+as.data.frame( prices ) 
+
+```
+
+3.	Drill down to the downtown area for the following:
+a.	Create a map that highlights parking lots.
+```{r}
+these.downtown <- syr$Nhood == "Downtown"
+these.downtown[ is.na(these.downtown) ] <- F
+downtown <- syr[ these.downtown , ]
+
+dat.dt <- as.data.frame( downtown )
+col.vec <- ifelse( dat.dt$LandUse == "Parking", "red", NA)
+
+plot( downtown, col=col.vec, border="lightgray", main="Parking Lots in Downtown Syracuse")
+
+```
+
+b.	Create a map that highlights commercial areas.
+```{r}
+col.vec <- ifelse( dat.dt$LandUse == "Commercial", "red", NA)
+
+plot( downtown, col=col.vec, border="lightgray", main="Commercial Areas in Downtown Syracuse")
+```
+
+c.	Create a map that highlights residential areas.
+```{r}
+col.vec <- rep( NA, nrow(dat.dt) )
+col.vec[ dat.dt$LandUse == "Apartment" ] <- "red"
+col.vec[ dat.dt$LandUse == "Multiple Residence" ] <- "red"
+col.vec[ dat.dt$LandUse == "Single Family" ] <- "red"
+col.vec[ dat.dt$LandUse == "Three Family" ] <- "red"
+col.vec[ dat.dt$LandUse == "Two Family" ] <- "red"
+
+plot( downtown, col=col.vec, border="lightgray", main="Residential Areas in Downtown Syracuse")
+```
+
+d.	Create a map that highlights non-taxable parcels.
+```{r}
+col.vec <- rep( NA, nrow(dat.dt) )
+col.vec[ dat.dt$LandUse == "Parks" ] <- "red"
+col.vec[ dat.dt$LandUse == "Schools" ] <- "red"
+col.vec[ dat.dt$LandUse == "Religious" ] <- "red"
+
+
+plot( downtown, col=col.vec, border="lightgray", main="Non-Taxable Parcels in Downtown Syracuse")
+
+```
+
+e.	What proportion of the downtown is residential? What proportion is commercial?
+```{r}
+acreage.dt <- tapply(dat.dt$Acres, dat.dt$LandUse, sum, na.rm=T)
+acre.df <- data.frame( Acres=as.numeric(acreage.dt), name=names(acreage.dt), stringsAsFactors=F )
+
+#find residential rows
+which(acre.df$name ==  "Apartment" )
+which(acre.df$name ==  "Multiple Residence" )
+which(acre.df$name ==  "Single Family" )
+which(acre.df$name ==  "Two Family" )
+which(acre.df$name ==  "Three Family" )
+
+#create proportions
+res.prop.dt <- sum(acre.df[c(1, 6, 12, 13, 14),1], na.rm=T) / sum(acre.df$Acres, na.rm=T)
+com.prop.dt <- acre.df[acre.df$name == "Commercial",1] / sum(acre.df$Acres, na.rm=T)
+
+#Proportion Residential
+res.prop.dt
+#Proportion Commercial
+com.prop.dt
+
+```
+
+4.	Which neighborhood has the highest number of vacant lots (var=LandUse)?
+```{r}
+vacant.lot <- dat[dat$LandUse == "Vacant Land",]
+vac.nhood <- as.data.frame(table(vacant.lot$Nhood))
+most.vac <- which.max(vac.nhood$Freq)
+vac.nhood[most.vac, ]
+
+```
+
+Vacant buildings (var=VacantBuil)?
+```{r}
+vac.build <- dat[dat$VacantBuil == "Y",]
+vac.nhood <- as.data.frame(table(vac.build$Nhood))
+most.vac <- which.max(vac.nhood$Freq)
+vac.nhood[most.vac, ]
+
+```
+
+Highest proportion of both combined?
+```{r}
+vac.all <- dat[dat$VacantBuil == "Y" | dat$LandUse == "Vacant Land",]
+vac.nhood <- as.data.frame(table(vac.all$Nhood))
+prop.all <- as.data.frame(table(dat$Nhood))
+dat3 <- merge(prop.all, vac.nhood, by.x="Var1", by.y="Var1")
+dat3$prop.vac <- dat3$Freq.y/dat3$Freq.x
+most.prop.vac <- which.max(dat3$prop.vac)
+dat3[most.prop.vac, ]
+
+```
+
+5.	Create a map of the city that highlights the age of buildings using the following categories:
+
+< 1900, 1900-1919, 1920-1939, 1940-1959, 1960-1979, 1980-1999,  2000-2014
+
+For your maps, be sure to use an informative title and legend. 
+
+
+```{r}
+dat$Build <- 2015 - as.numeric(dat$YearBuilt)
+col.vals <- brewer.pal( 7, "BuGn" )
+dat$col.vec2 <- rep( NA, nrow(dat) )
+dat$col.vec2[ dat$Build < 1900 ] <- "#EDF8FB"
+dat$col.vec2[ dat$Build > 1899 & dat$Build < 1920 ] <- "#CCECE6"
+dat$col.vec2[ dat$Build > 1919 & dat$Build < 1940 ] <- "#99D8C9"
+dat$col.vec2[ dat$Build > 1939 & dat$Build < 1960 ] <- "#66C2A4"
+dat$col.vec2[ dat$Build > 1959 & dat$Build < 1980 ] <- "#41AE76"
+dat$col.vec2[ dat$Build > 1979 & dat$Build < 2000 ] <- "#238B45"
+dat$col.vec2[ dat$Build > 1999 ] <- "#005824"
+
+
+plot(syr, col=dat$col.vec2, border=NA, main="Syracuse Buildings by Age")
+legend("bottomleft",  legend = c("< 1900", "1900-1919", "1920-1939", "1940-1959", "1960-1979", "1980-1999", "2000-2014"), 
+  title = "Year Built",
+  fill = col.vals,
+  cex = 0.56,
+  bty = "n") 
+```
+
+
