@@ -1,0 +1,183 @@
+---
+title: "Code Violations GIS Visualization"
+author: "Rory Tikalsky & Skyler Halbritter"
+date: "March 9, 2016"
+output: html_document
+---
+
+
+```
+setwd()
+```
+
+##Visualizing Using Point Mapping
+####Map Basics
+```{r}
+library(ggmap)
+syracuse <- get_map(location="Syracuse NY", zoom = 13, color="bw")
+syr.map <- ggmap(syracuse, extent = "device")
+```
+
+
+***
+
+#####This code was originally used to create the dataframes from the original file. Because of the length of geocoding, this was not run for the R Markdown. Instead, outputs were saved in a dataframe and converted to new CSV files.
+
+****
+dat2 <- read.csv("new data.csv")
+
+**Open Violations**
+open.dat <- dat2[dat2$Complaint.Status == "Open", ]
+
+**Open Bed Bug Violations**
+open.bedbugs <- open.dat[open.dat$Complaint.Type == "Bed Bugs",]
+open.bedbugs["fulladdress"] <- NA
+open.bedbugs$fulladdress <- paste(open.bedbugs$Address, "Syracuse, NY", sep=" ")
+long.lat.bugs <- geocode(open.bedbugs$fulladdress)
+open.bedbugs <- cbind(open.bedbugs, long.lat.bugs)
+
+**All Bed Bug Violations**
+bed.bugs.all <- dat2[dat2$Complaint.Type == "Bed Bugs",]
+bed.bugs.all["fulladdress"] <- NA
+bed.bugs.all$fulladdress <- paste(bed.bugs.all$Address, "Syracuse, NY", sep=" ")
+long.lat.all.bugs <- geocode(bed.bugs.all$fulladdress)
+bed.bugs.all <- cbind(bed.bugs.all, long.lat.all.bugs)
+
+
+**Unsafe conditions**
+unsafe.dat <- dat2[dat2$Complaint.Type == "Unsafe Conditions",]
+unsafe.dat["fulladdress"] <- NA
+unsafe.dat$fulladdress <- paste(unsafe.dat$Address, "Syracuse, NY", sep=" ")
+long.lat.unsafe <- geocode(unsafe.dat$fulladdress)
+unsafe.dat <- cbind(unsafe.dat, long.lat.unsafe)
+
+**Add color vector to unsafe conditions**
+col.vec <- rep( NA, nrow(unsafe.dat) )
+col.vec <- ifelse( unsafe.dat$Violation.Status == "Open", "orange", "blue")
+
+***
+
+
+
+
+
+####Load new dataset (and Subset and Geocode -- see above code)
+```{r}
+open.bedbugs <- read.csv("openbedbugs.csv")
+bed.bugs.all <- read.csv("bedbugsall.csv")
+unsafe.dat <- read.csv("unsafe.csv")
+
+#add color vector to unsafe conditions
+col.vec <- rep( NA, nrow(unsafe.dat) )
+col.vec <- ifelse( unsafe.dat$Violation.Status == "Open", "orange", "blue")
+
+```
+
+####Load Multiplot Function
+This function is not in the ggmap package but is widely used for it.
+```{r}
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  library(grid)
+  
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+  
+  numPlots = length(plots)
+  
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                     ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+  
+  if (numPlots==1) {
+    print(plots[[1]])
+    
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+    
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+      
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+```
+
+
+####Plot All 3 Maps
+```{r}
+
+multiplot(
+syr.map + geom_point(data=open.bedbugs, aes(x=lon, y=lat), size=3, col="orange", alpha=.8) +
+  ggtitle("Open Bed Bug Violations") +
+  theme(plot.title=element_text(family="Times", face="bold", size=12)),
+syr.map + geom_point(data=bed.bugs.all, aes(x=lon, y=lat), size=3, col="orange", alpha=.4) +
+  ggtitle("All Bed Bug Violations 2012-Present") +
+  theme(plot.title=element_text(family="Times", face="bold", size=12)),
+syr.map + geom_point(data=unsafe.dat, aes(x=lon, y=lat), size=3, col=col.vec, alpha=.4) +
+  ggtitle("All Unsafe Condition Violations 2012-Present") +
+  theme(plot.title=element_text(family="Times", face="bold", size=12)),
+layout=matrix(c(1,2,3,3), nrow=2, byrow=TRUE)
+)
+```
+
+
+------
+
+##Visualizing Using Choropleth Mapping
+```{r}
+require(maptools)
+require(sp)
+
+# get your data sets
+syr <- readShapePoly( fn="01-05-2015", proj4string=CRS("+proj=longlat +datum=WGS84") )
+
+violations <- read.csv("Violation Report with lot ID.csv")
+
+#cast as numeric
+syr$SBL <- as.character(syr$SBL)
+violations$Identifier <- as.character(violations$Identifier)
+
+#merge them
+syr@data <- data.frame(syr@data, violations[match(syr@data[, "SBL"], violations[, "Identifier"]), ])
+
+###################################################################
+############### Trash Violations in University Area ###############
+###################################################################
+
+#subset for university area
+univ <- syr[which(syr@data$Nhood=="Westcott"| syr@data$Nhood=="University Neighborhood" | syr@data$Nhood=="University Hill" | syr@data$Nhood=="Near Eastside" | syr@data$Nhood=="South Campus" | syr@data$Nhood=="Outer Comstock"), ]
+
+#create color vector of open violations, closed violations and no violations
+col.vec <- ifelse( univ@data$Complaint.Type=="Trash/Debris-Private, Occ" & univ@data$Violation.Status=="Open", "steel blue", "gray80")
+col.vec <- ifelse( univ@data$Complaint.Type=="Trash/Debris-Private, Occ" & univ@data$Violation.Status=="Closed", "dark orange", col.vec)
+col.vec[ is.na(col.vec) ] <- "gray80"
+
+#plot and create legend
+plot( univ, col=col.vec, border=FALSE, main="Trash Violations near Syracuse University (2012-2015)", cex.main=1.4)
+legend(x=626459, y=1110819, legend= c("Open Violations", "Closed Violations", "No Violations"), fill=c("steel blue","dark orange", "gray80"), bty="n", cex=.8)
+
+
+#########################################################################
+############## Overgrowth Violations in University Area #################
+#########################################################################
+
+#create color vector of open violations, closed violations and no violations
+col.vec <- ifelse( univ@data$Complaint.Type=="Overgrowth: Private, Occ" & univ@data$Violation.Status=="Open", "steel blue", "gray80")
+col.vec <- ifelse( univ@data$Complaint.Type=="Overgrowth: Private, Occ" & univ@data$Violation.Status=="Closed", "dark orange", col.vec)
+col.vec[ is.na(col.vec) ] <- "gray80"
+
+#plot and create legend
+plot( univ, col=col.vec, border=FALSE, main="Overgrowth Violations Near Syracuse University (2012-2015)", cex.main=1.4)
+legend(x=626459, y=1110819, legend= c("Open Violations", "Closed Violations", "No Violations"), fill=c("steel blue","dark orange", "gray80"), bty="n", cex=.8)
+```
